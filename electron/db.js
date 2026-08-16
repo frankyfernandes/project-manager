@@ -58,6 +58,15 @@ function initializeDb() {
       FOREIGN KEY(folder_id) REFERENCES folders(id)
     )`);
 
+    // Time Logs table
+    db.run(`CREATE TABLE IF NOT EXISTS time_logs (
+      id TEXT PRIMARY KEY,
+      project_id TEXT,
+      duration_seconds INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(project_id) REFERENCES projects(id)
+    )`);
+
     // Migrations
     db.all("PRAGMA table_info(projects)", (err, rows) => {
       if (!err && rows && !rows.some(r => r.name === 'path')) {

@@ -10,5 +10,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   writeFile: (data) => ipcRenderer.invoke('write-file', data),
   deleteItem: (item) => ipcRenderer.invoke('delete-item', item),
   uploadFiles: (data) => ipcRenderer.invoke('upload-files', data),
+  renameFile: (data) => ipcRenderer.invoke('rename-file', data),
+  moveFile: (data) => ipcRenderer.invoke('move-file', data),
+  logTime: (data) => ipcRenderer.invoke('log-time', data),
+  getTime: (projectId) => ipcRenderer.invoke('get-time', projectId),
   onOpenSettings: (callback) => ipcRenderer.on('open-settings', callback),
+  onOpenCommandPalette: (callback) => ipcRenderer.on('open-command-palette', callback),
 });

@@ -29,6 +29,13 @@ function createWindow() {
       label: 'File',
       submenu: [
         {
+          label: 'Command Palette',
+          accelerator: 'CmdOrCtrl+P',
+          click: () => {
+            mainWindow.webContents.send('open-command-palette');
+          }
+        },
+        {
           label: 'Settings',
           click: () => {
             mainWindow.webContents.send('open-settings');
@@ -52,6 +59,13 @@ function createWindow() {
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
+
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if ((input.control || input.meta) && input.key.toLowerCase() === 'p') {
+      event.preventDefault();
+      mainWindow.webContents.send('open-command-palette');
+    }
+  });
 }
 
 app.whenReady().then(() => {

@@ -180,6 +180,9 @@
   color: var(--text-secondary);
   cursor: pointer;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
 }
 
 .format-item:hover {
@@ -279,4 +282,20 @@
 
 .btn-submit:hover {
   background: var(--accent-hover);
+}
+
+.tree-rename-input {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  outline: none;
+  flex: 1;
+}
+
+.tree-rename-input:focus {
+  border-color: #60a5fa;
 }

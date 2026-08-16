@@ -206,4 +206,56 @@ export function registerIpcHandlers() {
       throw e;
     }
   });
+
+  ipcMain.handle('rename-file', async (event, { id, oldPath, newName }) => {
+    try {
+      const newPath = path.join(path.dirname(oldPath), newName);
+      if (fs.existsSync(oldPath)) {
+        fs.renameSync(oldPath, newPath);
+      }
+      await runQuery('UPDATE files SET name = ?, path = ? WHERE id = ?', [newName, newPath, id]);
+      return { id, newName, newPath };
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  });
+
+  ipcMain.handle('move-file', async (event, { id, oldPath, newFolderId, newParentPath }) => {
+    try {
+      const fileName = path.basename(oldPath);
+      const newPath = path.join(newParentPath, fileName);
+      if (fs.existsSync(oldPath)) {
+        fs.renameSync(oldPath, newPath);
+      }
+      // if newFolderId is null, it means it's moved directly under project, but folder_id is allowed to be null if project_id is kept? 
+      // Actually, wait, let's keep it simple: we just update folder_id and path.
+      await runQuery('UPDATE files SET folder_id = ?, path = ? WHERE id = ?', [newFolderId, newPath, id]);
+      return { id, newFolderId, newPath };
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  });
+
+  ipcMain.handle('log-time', async (event, { projectId, durationSeconds }) => {
+    try {
+      const id = crypto.randomUUID();
+      await runQuery('INSERT INTO time_logs (id, project_id, duration_seconds) VALUES (?, ?, ?)', [id, projectId, durationSeconds]);
+      return true;
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  });
+
+  ipcMain.handle('get-time', async (event, projectId) => {
+    try {
+      const rows = await getQuery('SELECT SUM(duration_seconds) as total FROM time_logs WHERE project_id = ?', [projectId]);
+      return rows[0]?.total || 0;
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  });
 }

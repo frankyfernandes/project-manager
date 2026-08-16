@@ -1,17 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { Search, FolderPlus, Folder, File, ChevronRight, ChevronDown, Plus, X, Trash2, Upload } from 'lucide-react';
+import { Search, FolderPlus, Folder, File, ChevronRight, ChevronDown, Plus, X, Trash2, Upload, Kanban, Link, FileText, FileCode, FileType } from 'lucide-react';
 import './Explorer.css';
 
-const TreeItem = ({ item, level, onSelect, selectedItem, onAddFolder, onAddFile, onUpload, onDelete, requestPrompt, requestConfirm }) => {
+const TreeItem = ({ item, level, onSelect, selectedItem, onAddFolder, onAddFile, onUpload, onDelete, onRename, onMove, requestPrompt, requestConfirm }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(item.name);
   const isSelected = selectedItem?.id === item.id;
   
   const handleToggle = (e) => {
     e.stopPropagation();
+    if (isEditing) return;
     if (item.type === 'folder') {
       setIsOpen(!isOpen);
     }
     onSelect(item);
+  };
+
+  const handleDoubleClick = (e) => {
+    e.stopPropagation();
+    if (item.type === 'file') {
+      setIsEditing(true);
+      setEditName(item.name);
+    }
+  };
+
+  const handleRenameSubmit = () => {
+    if (editName.trim() && editName !== item.name) {
+      onRename(item, editName.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleDragStart = (e) => {
+    if (item.type === 'file') {
+      e.dataTransfer.setData('application/json', JSON.stringify(item));
+      e.dataTransfer.effectAllowed = 'move';
+    }
+  };
+
+  const handleDragOver = (e) => {
+    if (item.type === 'folder') {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (item.type === 'folder') {
+      try {
+        const draggedItem = JSON.parse(e.dataTransfer.getData('application/json'));
+        if (draggedItem.id !== item.id) {
+          onMove(draggedItem, item);
+        }
+      } catch (err) {}
+    }
   };
 
   const handleAddFolder = (e) => {
@@ -67,6 +112,11 @@ const TreeItem = ({ item, level, onSelect, selectedItem, onAddFolder, onAddFile,
         className={`tree-item ${isSelected ? 'selected' : ''}`} 
         style={{ paddingLeft: `${level * 16 + 12}px` }}
         onClick={handleToggle}
+        onDoubleClick={handleDoubleClick}
+        draggable={item.type === 'file'}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
       >
         <span className="tree-icon-container">
           {item.type === 'folder' && (
@@ -74,20 +124,41 @@ const TreeItem = ({ item, level, onSelect, selectedItem, onAddFolder, onAddFile,
           )}
           {item.type === 'folder' ? (
             <Folder size={16} className="tree-icon text-blue-400" />
+          ) : item.name.endsWith('.board') ? (
+            <Kanban size={16} className="tree-icon" style={{ color: '#a855f7' }} />
           ) : (
-            item.name.endsWith('.link') && item.url ? (
-              <img 
-                src={`https://www.google.com/s2/favicons?domain=${(function(){ try { return new URL(item.url).hostname; } catch(e) { return ''; } })()}&sz=32`}
-                style={{ width: 16, height: 16, objectFit: 'contain' }}
-                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }}
-              />
-            ) : null
-          )}
-          {item.type !== 'folder' && (
-            <File size={16} className="tree-icon text-gray-400" style={{ display: (item.name.endsWith('.link') && item.url) ? 'none' : 'block' }} />
+            <>
+              {item.name.endsWith('.link') && item.url && (
+                <img 
+                  src={`https://www.google.com/s2/favicons?domain=${(function(){ try { return new URL(item.url).hostname; } catch(e) { return ''; } })()}&sz=32`}
+                  style={{ width: 16, height: 16, objectFit: 'contain' }}
+                  onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }}
+                />
+              )}
+              <File size={16} className="tree-icon text-gray-400" style={{ display: (item.name.endsWith('.link') && item.url) ? 'none' : 'block' }} />
+            </>
           )}
         </span>
-        <span className="tree-label">{item.name}</span>
+        {isEditing ? (
+          <input 
+            type="text" 
+            className="tree-rename-input"
+            value={editName}
+            onChange={e => setEditName(e.target.value)}
+            onBlur={handleRenameSubmit}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleRenameSubmit();
+              if (e.key === 'Escape') {
+                setIsEditing(false);
+                setEditName(item.name);
+              }
+            }}
+            autoFocus
+            onClick={e => e.stopPropagation()}
+          />
+        ) : (
+          <span className="tree-label">{item.name}</span>
+        )}
         
         <div className="tree-actions">
           {item.type === 'folder' && (
@@ -96,12 +167,13 @@ const TreeItem = ({ item, level, onSelect, selectedItem, onAddFolder, onAddFile,
               <div className="add-file-wrapper">
                 <button title="Add File"><Plus size={14} /></button>
                 <div className="file-format-menu">
-                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.link'); }}>Web Link (.link)</div>
-                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.html'); }}>Rich Text (.html)</div>
-                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.md'); }}>Markdown (.md)</div>
-                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.txt'); }}>Raw Text (.txt)</div>
-                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.js'); }}>Javascript (.js)</div>
-                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.css'); }}>CSS (.css)</div>
+                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.board'); }}><Kanban size={14} style={{ marginRight: 8, color: '#a855f7' }} /> Kanban Board (.board)</div>
+                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.link'); }}><Link size={14} style={{ marginRight: 8, color: '#3b82f6' }} /> Web Link (.link)</div>
+                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.html'); }}><FileText size={14} style={{ marginRight: 8, color: '#f59e0b' }} /> Rich Text (.html)</div>
+                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.md'); }}><FileType size={14} style={{ marginRight: 8, color: '#10b981' }} /> Markdown (.md)</div>
+                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.txt'); }}><File size={14} style={{ marginRight: 8, color: '#9ca3af' }} /> Raw Text (.txt)</div>
+                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.js'); }}><FileCode size={14} style={{ marginRight: 8, color: '#eab308' }} /> Javascript (.js)</div>
+                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.css'); }}><FileCode size={14} style={{ marginRight: 8, color: '#38bdf8' }} /> CSS (.css)</div>
                 </div>
               </div>
               <button onClick={handleUpload} title="Upload Files"><Upload size={14} /></button>
@@ -124,6 +196,8 @@ const TreeItem = ({ item, level, onSelect, selectedItem, onAddFolder, onAddFile,
               onAddFile={onAddFile}
               onUpload={onUpload}
               onDelete={onDelete}
+              onRename={onRename}
+              onMove={onMove}
               requestPrompt={requestPrompt}
               requestConfirm={requestConfirm}
             />
@@ -230,6 +304,22 @@ export default function Explorer({ onSelect, selectedItem }) {
     }
   };
 
+  const handleRenameFile = async (item, newName) => {
+    if (window.electronAPI) {
+      await window.electronAPI.renameFile({ id: item.id, oldPath: item.path, newName });
+      loadTree();
+    }
+  };
+
+  const handleMoveFile = async (item, targetFolder) => {
+    if (window.electronAPI) {
+      const newFolderId = targetFolder.isProject ? null : targetFolder.id;
+      const newParentPath = targetFolder.path;
+      await window.electronAPI.moveFile({ id: item.id, oldPath: item.path, newFolderId, newParentPath });
+      loadTree();
+    }
+  };
+
   const filteredTree = search 
     ? treeData.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
     : treeData;
@@ -267,6 +357,8 @@ export default function Explorer({ onSelect, selectedItem }) {
             onAddFile={handleAddFile}
             onUpload={handleUploadFile}
             onDelete={handleDeleteItem}
+            onRename={handleRenameFile}
+            onMove={handleMoveFile}
             requestPrompt={requestPrompt}
             requestConfirm={requestConfirm}
           />
