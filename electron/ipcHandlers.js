@@ -1,8 +1,11 @@
-import { ipcMain, app, dialog } from 'electron';
+import { ipcMain, app, dialog, shell } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { db } from './db.js';
 import crypto from 'crypto';
+import http from 'http';
+import url from 'url';
+import { google } from 'googleapis';
 
 const docsPath = app.getPath('documents');
 const appFolder = path.join(docsPath, 'ProjectManagerApp', 'Projects');
@@ -257,5 +260,62 @@ export function registerIpcHandlers() {
       console.error(e);
       throw e;
     }
+  });
+
+  ipcMain.handle('sign-in-with-google', async (event, clientId, clientSecret) => {
+    return new Promise((resolve, reject) => {
+      const redirectUri = 'http://localhost:3000/oauth2callback';
+      const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+      
+      const scopes = [
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email'
+      ];
+      
+      const authUrl = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: scopes,
+      });
+      
+      const server = http.createServer(async (req, res) => {
+        try {
+          if (req.url.indexOf('/oauth2callback') > -1) {
+            const qs = new url.URL(req.url, 'http://localhost:3000').searchParams;
+            const code = qs.get('code');
+            
+            res.end('<html><body><h2>Authentication successful!</h2><p>You can close this tab and return to the Project Manager app.</p><script>window.close()</script></body></html>');
+            server.destroy();
+            
+            const { tokens } = await oauth2Client.getToken(code);
+            oauth2Client.setCredentials(tokens);
+            
+            const oauth2 = google.oauth2({ auth: oauth2Client, version: 'v2' });
+            const userInfo = await oauth2.userinfo.get();
+            
+            resolve({ user: userInfo.data, tokens });
+          }
+        } catch (e) {
+          res.end('Authentication failed: ' + e.message);
+          server.destroy();
+          reject(e);
+        }
+      });
+      
+      const connections = new Set();
+      server.on('connection', conn => {
+        connections.add(conn);
+        conn.on('close', () => connections.delete(conn));
+      });
+      server.destroy = () => {
+        server.close();
+        for (const conn of connections) {
+          conn.destroy();
+        }
+      };
+      
+      server.listen(3000, () => {
+        shell.openExternal(authUrl);
+      });
+    });
   });
 }

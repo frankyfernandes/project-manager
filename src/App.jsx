@@ -5,8 +5,10 @@ import Settings from './components/Settings';
 import CommandPalette from './components/CommandPalette';
 import Dashboard from './components/Dashboard';
 import Timer from './components/Timer';
+import Login from './components/Login';
 
 function App() {
+  const [user, setUser] = useState(null);
   const [openTabs, setOpenTabs] = useState([]);
   const [activeTabId, setActiveTabId] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -21,6 +23,13 @@ function App() {
     const savedFontSize = localStorage.getItem('editorFontSize');
     if (savedFontSize) {
       document.documentElement.style.setProperty('--editor-font-size', savedFontSize);
+    }
+    
+    const savedUser = localStorage.getItem('userProfile');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {}
     }
 
     if (window.electronAPI) {
@@ -61,6 +70,15 @@ function App() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('userProfile');
+    setUser(null);
+  };
+
+  if (!user) {
+    return <Login onLoginSuccess={setUser} />;
+  }
+
   const activeTab = openTabs.find(tab => tab.id === activeTabId);
 
   return (
@@ -81,7 +99,7 @@ function App() {
           <Dashboard onSelectItem={handleSelectItem} />
         )}
       </div>
-      {isSettingsOpen && <Settings onClose={() => setIsSettingsOpen(false)} />}
+      {isSettingsOpen && <Settings onClose={() => setIsSettingsOpen(false)} user={user} onLogout={handleLogout} />}
       <CommandPalette 
         isOpen={isCommandPaletteOpen} 
         onClose={() => setIsCommandPaletteOpen(false)} 

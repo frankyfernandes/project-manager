@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Settings.css';
 
-const Settings = ({ onClose }) => {
+const Settings = ({ onClose, user, onLogout }) => {
   const [persistSession, setPersistSession] = useState(true);
   const [theme, setTheme] = useState('dark');
   const [fontSize, setFontSize] = useState('14px');
@@ -54,6 +54,27 @@ const Settings = ({ onClose }) => {
         </div>
 
         <div className="settings-content">
+
+          {user && (
+            <div className="setting-group">
+              <h3>Account</h3>
+              <div className="setting-item">
+                <div className="setting-info" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <img src={user.picture} alt="Profile" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
+                  <div>
+                    <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{user.name}</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{user.email}</div>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => { onLogout(); onClose(); }} 
+                  style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          )}
           
           <div className="setting-group">
             <h3>Appearance</h3>

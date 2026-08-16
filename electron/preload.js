@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   moveFile: (data) => ipcRenderer.invoke('move-file', data),
   logTime: (data) => ipcRenderer.invoke('log-time', data),
   getTime: (projectId) => ipcRenderer.invoke('get-time', projectId),
+  signInWithGoogle: (clientId, clientSecret) => ipcRenderer.invoke('sign-in-with-google', clientId, clientSecret),
   onOpenSettings: (callback) => ipcRenderer.on('open-settings', callback),
   onOpenCommandPalette: (callback) => ipcRenderer.on('open-command-palette', callback),
 });
