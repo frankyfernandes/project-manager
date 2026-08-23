@@ -55,8 +55,8 @@ export default function Viewer({ openTabs, activeTabId, onSelectTab, onCloseTab,
 
   useEffect(() => {
     if (selectedItem && selectedItem.type === 'file') {
-      const matchText = selectedItem.name.match(/\.(txt|md|html|rtf)$/i);
-      const matchCode = selectedItem.name.match(/\.(js|json|css|csv|jsx)$/i);
+      const matchText = selectedItem.name.match(/\.(html|rtf)$/i);
+      const matchCode = selectedItem.name.match(/\.(txt|md|js|json|css|csv|jsx)$/i);
       const matchLink = selectedItem.name.match(/\.link$/i);
       const matchImage = selectedItem.name.match(/\.(png|jpe?g|gif|svg|webp)$/i);
       const matchPdf = selectedItem.name.match(/\.pdf$/i);
@@ -356,10 +356,10 @@ export default function Viewer({ openTabs, activeTabId, onSelectTab, onCloseTab,
                 </div>
                 <iframe src={base64Data} style={{ flex: 1, width: '100%', height: '100%', border: 'none', backgroundColor: 'white' }}></iframe>
               </div>
-            ) : isTextFile ? (
+            ) : isTextFile || isCodeFile ? (
               <div className="editor-card animate-fade-in" style={{ borderRadius: 0, border: 'none', position: 'relative' }}>
                 <div className="editor-header">
-                  <h3>{isCodeFile ? 'Code Editor' : 'Rich Text Editor'}</h3>
+                  <h3>{isCodeFile ? (selectedItem.name.match(/\.(txt|md)$/i) ? 'Raw Text Editor' : 'Code Editor') : 'Rich Text Editor'}</h3>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <button className="browser-btn" title={`Path: ${selectedItem.path}\nType: ${selectedItem.type}`}><Info size={16} /></button>
                     <button className="browser-btn" title={'Open in External Application'} onClick={handleOpenSystem}><ExternalLink size={16} /></button>
