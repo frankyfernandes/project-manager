@@ -29,8 +29,17 @@ export default function Viewer({ openTabs, activeTabId, onSelectTab, onCloseTab,
         setRefreshTrigger(prev => prev + 1);
       }
     };
+    
+    const handleForceRefresh = () => {
+      setRefreshTrigger(prev => prev + 1);
+    };
+
     window.addEventListener('kanban-updated', handleKanbanUpdate);
-    return () => window.removeEventListener('kanban-updated', handleKanbanUpdate);
+    window.addEventListener('force-refresh', handleForceRefresh);
+    return () => {
+      window.removeEventListener('kanban-updated', handleKanbanUpdate);
+      window.removeEventListener('force-refresh', handleForceRefresh);
+    };
   }, [selectedItem]);
   
   const [showSearch, setShowSearch] = useState(false);

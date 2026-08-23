@@ -37,7 +37,33 @@ export default function KanbanBoard({ initialData, onSave }) {
     try {
       if (initialData && initialData.trim() !== '') {
         const parsed = JSON.parse(initialData);
-        if (parsed.columns) setBoardData(parsed);
+        if (parsed.columns && Array.isArray(parsed.columns)) {
+          setBoardData(parsed);
+        } else if (parsed.columns && typeof parsed.columns === 'object') {
+          // Auto-migrate from the old corrupted object format back to the array format
+          console.warn("Migrating old Kanban data format...");
+          const newColumns = [];
+          const order = parsed.columnOrder || Object.keys(parsed.columns);
+          
+          for (const colId of order) {
+            const oldCol = parsed.columns[colId];
+            if (oldCol) {
+              const cards = (oldCol.taskIds || []).map(taskId => parsed.tasks?.[taskId]).filter(Boolean);
+              newColumns.push({
+                id: oldCol.id || colId,
+                title: oldCol.title || colId,
+                cards: cards
+              });
+            }
+          }
+          
+          const migrated = { columns: newColumns.length > 0 ? newColumns : DEFAULT_BOARD.columns };
+          setBoardData(migrated);
+          onSave(JSON.stringify(migrated, null, 2));
+        } else {
+          setBoardData(DEFAULT_BOARD);
+          onSave(JSON.stringify(DEFAULT_BOARD, null, 2));
+        }
       } else {
         setBoardData(DEFAULT_BOARD);
         onSave(JSON.stringify(DEFAULT_BOARD, null, 2));
@@ -45,6 +71,7 @@ export default function KanbanBoard({ initialData, onSave }) {
     } catch (e) {
       console.error('Invalid board data', e);
       setBoardData(DEFAULT_BOARD);
+      onSave(JSON.stringify(DEFAULT_BOARD, null, 2));
     }
   }, [initialData]);
 

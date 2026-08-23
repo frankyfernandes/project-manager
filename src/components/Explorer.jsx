@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, FolderPlus, Folder, File, ChevronRight, ChevronDown, Plus, X, Trash2, Upload, Kanban, Link, FileText, FileCode, FileType, Table2, FileBadge } from 'lucide-react';
+import { Search, FolderPlus, Folder, File, ChevronRight, ChevronDown, Plus, X, Trash2, Upload, Kanban, Link, FileText, FileCode, FileType, Table2, FileBadge, RefreshCw } from 'lucide-react';
 import './Explorer.css';
 
 const TreeItem = ({ item, level, onSelect, selectedItem, onAddFolder, onAddFile, onUpload, onDelete, onRename, onMove, requestPrompt, requestConfirm }) => {
@@ -253,6 +253,7 @@ const TreeItem = ({ item, level, onSelect, selectedItem, onAddFolder, onAddFile,
 export default function Explorer({ onSelect, selectedItem }) {
   const [search, setSearch] = useState('');
   const [treeData, setTreeData] = useState([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Custom Prompt Modal State
   const [promptConfig, setPromptConfig] = useState({ isOpen: false, title: '', value: '', secondaryValue: '', isDouble: false, onSubmit: null });
@@ -288,6 +289,15 @@ export default function Explorer({ onSelect, selectedItem }) {
   useEffect(() => {
     loadTree();
   }, []);
+
+  const handleGlobalRefresh = async () => {
+    setIsRefreshing(true);
+    await loadTree();
+    window.dispatchEvent(new CustomEvent('force-refresh'));
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 500); // small artificial delay so the user can see the spin
+  };
 
   const handleAddProject = () => {
     requestPrompt('Project Name:', 'New Project', async (name) => {
@@ -370,9 +380,14 @@ export default function Explorer({ onSelect, selectedItem }) {
     <div className="explorer-container">
       <div className="explorer-header">
         <h2>Projects</h2>
-        <button className="add-btn" onClick={handleAddProject} title="Add New Project">
-          <FolderPlus size={18} />
-        </button>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <button className="add-btn" onClick={handleGlobalRefresh} title="Refresh Files and Content" disabled={isRefreshing}>
+            <RefreshCw size={16} className={isRefreshing ? 'spin-animation' : ''} />
+          </button>
+          <button className="add-btn" onClick={handleAddProject} title="Add New Project">
+            <FolderPlus size={18} />
+          </button>
+        </div>
       </div>
       
       <div className="explorer-search">
