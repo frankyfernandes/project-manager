@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Menu } from 'lucide-react';
 import Explorer from './components/Explorer';
 import Viewer from './components/Viewer';
 import Settings from './components/Settings';
@@ -13,6 +14,8 @@ function App() {
   const [activeTabId, setActiveTabId] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [enableTimeTracker, setEnableTimeTracker] = useState(true);
 
   React.useEffect(() => {
     // Load initial preferences
@@ -30,6 +33,11 @@ function App() {
       try {
         setUser(JSON.parse(savedUser));
       } catch (e) {}
+    }
+
+    const savedTimeTracker = localStorage.getItem('enableTimeTracker');
+    if (savedTimeTracker !== null) {
+      setEnableTimeTracker(savedTimeTracker === 'true');
     }
 
     if (window.electronAPI) {
@@ -103,8 +111,17 @@ function App() {
         userSelect: 'none'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', WebkitAppRegion: 'no-drag' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', WebkitAppRegion: 'drag', paddingRight: '8px' }}>
-            Project Manager
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', WebkitAppRegion: 'drag' }}>
+            <div 
+              style={{ WebkitAppRegion: 'no-drag', display: 'flex', alignItems: 'center', padding: '6px', cursor: 'pointer', borderRadius: '4px', background: 'rgba(255,255,255,0.05)' }}
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              title="Toggle Sidebar"
+            >
+              <Menu size={16} style={{ color: 'var(--text-primary)' }} />
+            </div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', paddingRight: '8px' }}>
+              Project Manager
+            </div>
           </div>
           <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
             <span style={{ cursor: 'pointer', padding: '4px' }} onClick={(e) => handleShowMenu('file', e)}>File</span>
@@ -124,7 +141,7 @@ function App() {
       </div>
 
       <div className="main-content" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <div className="explorer-pane">
+        <div className="explorer-pane" style={{ display: isSidebarOpen ? 'flex' : 'none' }}>
           <Explorer onSelect={handleSelectItem} selectedItem={activeTab} />
         </div>
         <div className="viewer-pane" style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1 }}>
@@ -141,13 +158,21 @@ function App() {
           )}
         </div>
       </div>
-      {isSettingsOpen && <Settings onClose={() => setIsSettingsOpen(false)} user={user} onLogout={handleLogout} />}
+      {isSettingsOpen && (
+        <Settings 
+          onClose={() => setIsSettingsOpen(false)} 
+          user={user} 
+          onLogout={handleLogout}
+          enableTimeTracker={enableTimeTracker}
+          setEnableTimeTracker={setEnableTimeTracker}
+        />
+      )}
       <CommandPalette 
         isOpen={isCommandPaletteOpen} 
         onClose={() => setIsCommandPaletteOpen(false)} 
         onSelect={handleSelectItem} 
       />
-      <Timer selectedItem={activeTab} />
+      {enableTimeTracker && <Timer selectedItem={activeTab} />}
     </div>
   );
 }

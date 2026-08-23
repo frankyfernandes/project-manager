@@ -212,8 +212,8 @@ const TreeItem = ({ item, level, onSelect, selectedItem, onAddFolder, onAddFile,
                   <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.html'); }}><FileText size={14} style={{ marginRight: 8, color: '#f59e0b' }} /> Rich Text (.html)</div>
                   <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.md'); }}><FileType size={14} style={{ marginRight: 8, color: '#10b981' }} /> Markdown (.md)</div>
                   <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.txt'); }}><File size={14} style={{ marginRight: 8, color: '#9ca3af' }} /> Raw Text (.txt)</div>
-                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.js'); }}><FileCode size={14} style={{ marginRight: 8, color: '#eab308' }} /> Javascript (.js)</div>
-                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.css'); }}><FileCode size={14} style={{ marginRight: 8, color: '#38bdf8' }} /> CSS (.css)</div>
+                  {/* <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.js'); }}><FileCode size={14} style={{ marginRight: 8, color: '#eab308' }} /> Javascript (.js)</div> */}
+                  {/* <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.css'); }}><FileCode size={14} style={{ marginRight: 8, color: '#38bdf8' }} /> CSS (.css)</div> */}
                 </div>
               </div>
               <button onClick={handleUpload} title="Upload Files"><Upload size={14} /></button>

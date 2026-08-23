@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Settings.css';
 
-const Settings = ({ onClose, user, onLogout }) => {
+const Settings = ({ onClose, user, onLogout, enableTimeTracker, setEnableTimeTracker }) => {
   const [persistSession, setPersistSession] = useState(true);
   const [theme, setTheme] = useState('dark');
   const [fontSize, setFontSize] = useState('14px');
@@ -23,6 +23,12 @@ const Settings = ({ onClose, user, onLogout }) => {
     const newValue = !persistSession;
     setPersistSession(newValue);
     localStorage.setItem('persistWebSession', newValue);
+  };
+
+  const handleToggleTimeTracker = () => {
+    const newValue = !enableTimeTracker;
+    setEnableTimeTracker(newValue);
+    localStorage.setItem('enableTimeTracker', newValue);
   };
 
   const handleThemeChange = (e) => {
@@ -101,6 +107,21 @@ const Settings = ({ onClose, user, onLogout }) => {
                 <option value="16px">Large (16px)</option>
                 <option value="18px">Extra Large (18px)</option>
               </select>
+            </div>
+          </div>
+
+          <div className="setting-group">
+            <h3>Features</h3>
+            
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-title">Time Tracker</span>
+                <span className="setting-desc">Enable the floating time tracker for projects.</span>
+              </div>
+              <label className="toggle-switch">
+                <input type="checkbox" checked={enableTimeTracker} onChange={handleToggleTimeTracker} />
+                <span className="toggle-slider"></span>
+              </label>
             </div>
           </div>
 
