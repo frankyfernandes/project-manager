@@ -1,4 +1,4 @@
-import { ipcMain, app, dialog, shell } from 'electron';
+import { ipcMain, app, dialog, shell, BrowserWindow } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { db } from './db.js';
@@ -269,7 +269,8 @@ export function registerIpcHandlers() {
       
       const scopes = [
         'https://www.googleapis.com/auth/userinfo.profile',
-        'https://www.googleapis.com/auth/userinfo.email'
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/drive.file'
       ];
       
       const authUrl = oauth2Client.generateAuthUrl({
@@ -277,18 +278,26 @@ export function registerIpcHandlers() {
         scope: scopes,
       });
       
+      let authWindow = null;
+      
       const server = http.createServer(async (req, res) => {
         try {
           if (req.url.indexOf('/oauth2callback') > -1) {
             const qs = new url.URL(req.url, 'http://localhost:3000').searchParams;
             const code = qs.get('code');
             
-            res.end('<html><body><h2>Authentication successful!</h2><p>You can close this tab and return to the Project Manager app.</p><script>window.close()</script></body></html>');
+            res.end('<html><body><h2>Authentication successful!</h2><p>You can close this window now.</p><script>window.close()</script></body></html>');
             server.destroy();
+            
+            if (authWindow && !authWindow.isDestroyed()) {
+              authWindow.close();
+            }
             
             const { tokens } = await oauth2Client.getToken(code);
             oauth2Client.setCredentials(tokens);
             
+            fs.writeFileSync(path.join(appFolder, 'tokens.json'), JSON.stringify(tokens));
+
             const oauth2 = google.oauth2({ auth: oauth2Client, version: 'v2' });
             const userInfo = await oauth2.userinfo.get();
             
@@ -314,8 +323,79 @@ export function registerIpcHandlers() {
       };
       
       server.listen(3000, () => {
-        shell.openExternal(authUrl);
+        authWindow = new BrowserWindow({
+          width: 600,
+          height: 700,
+          webPreferences: {
+            partition: 'persist:browser',
+            nodeIntegration: false,
+            contextIsolation: true
+          }
+        });
+
+        // Strip Electron from User-Agent to bypass Google's "disallowed_useragent" block
+        const customUserAgent = authWindow.webContents.getUserAgent().replace(/Electron\/\S*\s/, '').replace(/project-manager\/\S*\s/, '');
+        authWindow.webContents.setUserAgent(customUserAgent);
+
+        authWindow.loadURL(authUrl);
+        
+        authWindow.on('closed', () => {
+          authWindow = null;
+        });
       });
     });
+  });
+
+  ipcMain.handle('create-google-file', async (event, { type, projectName, fileName, clientId, clientSecret }) => {
+    try {
+      const tokensPath = path.join(appFolder, 'tokens.json');
+      if (!fs.existsSync(tokensPath)) {
+        throw new Error("No tokens found. Please sign in again.");
+      }
+      
+      const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf8'));
+      const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, 'http://localhost:3000/oauth2callback');
+      oauth2Client.setCredentials(tokens);
+      
+      const drive = google.drive({ version: 'v3', auth: oauth2Client });
+      
+      // Check if project folder exists
+      const query = `mimeType='application/vnd.google-apps.folder' and name='${projectName}' and trashed=false`;
+      const res = await drive.files.list({ q: query, spaces: 'drive', fields: 'files(id, name)' });
+      
+      let folderId;
+      if (res.data.files && res.data.files.length > 0) {
+        folderId = res.data.files[0].id;
+      } else {
+        // Create folder
+        const folder = await drive.files.create({
+          resource: {
+            name: projectName,
+            mimeType: 'application/vnd.google-apps.folder'
+          },
+          fields: 'id'
+        });
+        folderId = folder.data.id;
+      }
+      
+      // Create document or sheet
+      const mimeType = type === 'sheet' 
+        ? 'application/vnd.google-apps.spreadsheet' 
+        : 'application/vnd.google-apps.document';
+        
+      const file = await drive.files.create({
+        resource: {
+          name: fileName,
+          mimeType,
+          parents: [folderId]
+        },
+        fields: 'id, webViewLink'
+      });
+      
+      return file.data.webViewLink;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   });
 }

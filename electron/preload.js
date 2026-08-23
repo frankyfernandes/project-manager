@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   logTime: (data) => ipcRenderer.invoke('log-time', data),
   getTime: (projectId) => ipcRenderer.invoke('get-time', projectId),
   signInWithGoogle: (clientId, clientSecret) => ipcRenderer.invoke('sign-in-with-google', clientId, clientSecret),
+  createGoogleFile: (data) => ipcRenderer.invoke('create-google-file', data),
+  showMenu: (type, x, y) => ipcRenderer.send('show-menu', { type, x, y }),
   onOpenSettings: (callback) => ipcRenderer.on('open-settings', callback),
   onOpenCommandPalette: (callback) => ipcRenderer.on('open-command-palette', callback),
 });

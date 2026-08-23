@@ -75,6 +75,13 @@ function App() {
     setUser(null);
   };
 
+  const handleShowMenu = (type, e) => {
+    if (window.electronAPI) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      window.electronAPI.showMenu(type, rect.left, rect.bottom);
+    }
+  };
+
   if (!user) {
     return <Login onLoginSuccess={setUser} />;
   }
@@ -82,22 +89,57 @@ function App() {
   const activeTab = openTabs.find(tab => tab.id === activeTabId);
 
   return (
-    <div className="app-container">
-      <div className="explorer-pane">
-        <Explorer onSelect={handleSelectItem} selectedItem={activeTab} />
-      </div>
-      <div className="viewer-pane" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        {openTabs.length > 0 ? (
-          <Viewer 
-            openTabs={openTabs}
-            activeTabId={activeTabId}
-            onSelectTab={setActiveTabId}
-            onCloseTab={handleCloseTab}
-            selectedItem={activeTab} 
+    <div className="app-container" style={{ flexDirection: 'column' }}>
+      <div className="title-bar" style={{ 
+        height: '40px', 
+        minHeight: '40px',
+        WebkitAppRegion: 'drag', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        padding: '0 150px 0 16px',
+        background: 'var(--bg-primary)',
+        borderBottom: '1px solid var(--border-color)',
+        userSelect: 'none'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', WebkitAppRegion: 'no-drag' }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', WebkitAppRegion: 'drag', paddingRight: '8px' }}>
+            Project Manager
+          </div>
+          <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            <span style={{ cursor: 'pointer', padding: '4px' }} onClick={(e) => handleShowMenu('file', e)}>File</span>
+            <span style={{ cursor: 'pointer', padding: '4px' }} onClick={(e) => handleShowMenu('edit', e)}>Edit</span>
+            <span style={{ cursor: 'pointer', padding: '4px' }} onClick={(e) => handleShowMenu('view', e)}>View</span>
+          </div>
+        </div>
+        <div style={{ WebkitAppRegion: 'no-drag', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img 
+            src={user.picture} 
+            alt="Profile" 
+            style={{ width: '24px', height: '24px', borderRadius: '50%', cursor: 'pointer', border: '1px solid var(--border-color)' }} 
+            onClick={() => setIsSettingsOpen(true)}
+            title="Settings & Account"
           />
-        ) : (
-          <Dashboard onSelectItem={handleSelectItem} />
-        )}
+        </div>
+      </div>
+
+      <div className="main-content" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div className="explorer-pane">
+          <Explorer onSelect={handleSelectItem} selectedItem={activeTab} />
+        </div>
+        <div className="viewer-pane" style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1 }}>
+          {openTabs.length > 0 ? (
+            <Viewer 
+              openTabs={openTabs}
+              activeTabId={activeTabId}
+              onSelectTab={setActiveTabId}
+              onCloseTab={handleCloseTab}
+              selectedItem={activeTab} 
+            />
+          ) : (
+            <Dashboard onSelectItem={handleSelectItem} />
+          )}
+        </div>
       </div>
       {isSettingsOpen && <Settings onClose={() => setIsSettingsOpen(false)} user={user} onLogout={handleLogout} />}
       <CommandPalette 

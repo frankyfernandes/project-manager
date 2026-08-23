@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, FolderPlus, Folder, File, ChevronRight, ChevronDown, Plus, X, Trash2, Upload, Kanban, Link, FileText, FileCode, FileType } from 'lucide-react';
+import { Search, FolderPlus, Folder, File, ChevronRight, ChevronDown, Plus, X, Trash2, Upload, Kanban, Link, FileText, FileCode, FileType, Table2, FileBadge } from 'lucide-react';
 import './Explorer.css';
 
 const TreeItem = ({ item, level, onSelect, selectedItem, onAddFolder, onAddFile, onUpload, onDelete, onRename, onMove, requestPrompt, requestConfirm }) => {
@@ -68,6 +68,44 @@ const TreeItem = ({ item, level, onSelect, selectedItem, onAddFolder, onAddFile,
   };
 
   const handleAddFile = (extension) => {
+    if (extension === '.gsheet' || extension === '.gdoc') {
+      const typeStr = extension === '.gsheet' ? 'Google Sheet' : 'Google Doc';
+      const typeEnum = extension === '.gsheet' ? 'sheet' : 'doc';
+      requestPrompt(`${typeStr} Name:`, `Untitled Document`, async (name) => {
+        try {
+          // Show a temporary loading or let it take time
+          const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+          const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
+          
+          let projectName = item.isProject ? item.name : 'Project Manager Default';
+          // Find the actual project root if this is a nested folder
+          if (!item.isProject && item.project_id) {
+            // we don't have direct access to project name here easily, 
+            // but we can pass 'Project Manager' or ask the user, or pass the parent folder name.
+            // For simplicity, let's just use the item's name or a default.
+            projectName = item.name; 
+          }
+
+          const webViewLink = await window.electronAPI.createGoogleFile({
+            type: typeEnum,
+            projectName,
+            fileName: name,
+            clientId,
+            clientSecret
+          });
+
+          // Once we have the URL, create a local .link file
+          let finalName = name;
+          if (!finalName.endsWith('.link')) finalName += '.link';
+          onAddFile(finalName, item, webViewLink);
+          setIsOpen(true);
+        } catch (e) {
+          alert('Failed to create Google file: ' + e.message);
+        }
+      });
+      return;
+    }
+
     if (extension === '.link') {
       requestPrompt(`Add Web Link`, `Web Link`, (name, url) => {
         let finalName = name;
@@ -168,6 +206,8 @@ const TreeItem = ({ item, level, onSelect, selectedItem, onAddFolder, onAddFile,
                 <button title="Add File"><Plus size={14} /></button>
                 <div className="file-format-menu">
                   <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.board'); }}><Kanban size={14} style={{ marginRight: 8, color: '#a855f7' }} /> Kanban Board (.board)</div>
+                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.gsheet'); }}><Table2 size={14} style={{ marginRight: 8, color: '#10b981' }} /> Google Sheet</div>
+                  <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.gdoc'); }}><FileBadge size={14} style={{ marginRight: 8, color: '#3b82f6' }} /> Google Doc</div>
                   <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.link'); }}><Link size={14} style={{ marginRight: 8, color: '#3b82f6' }} /> Web Link (.link)</div>
                   <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.html'); }}><FileText size={14} style={{ marginRight: 8, color: '#f59e0b' }} /> Rich Text (.html)</div>
                   <div className="format-item" onClick={(e) => { e.stopPropagation(); handleAddFile('.md'); }}><FileType size={14} style={{ marginRight: 8, color: '#10b981' }} /> Markdown (.md)</div>

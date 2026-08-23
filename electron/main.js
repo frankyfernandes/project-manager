@@ -13,6 +13,12 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: '#0f172a',
+      symbolColor: '#f8fafc',
+      height: 40
+    },
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -82,6 +88,52 @@ app.on('window-all-closed', function () {
 });
 
 // IPC handlers
+ipcMain.on('show-menu', (event, { type, x, y }) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  let template = [];
+  
+  if (type === 'file') {
+    template = [
+      {
+        label: 'Command Palette',
+        accelerator: 'CmdOrCtrl+P',
+        click: () => win.webContents.send('open-command-palette')
+      },
+      {
+        label: 'Settings',
+        click: () => win.webContents.send('open-settings')
+      },
+      { type: 'separator' },
+      { role: 'quit' }
+    ];
+  } else if (type === 'edit') {
+    template = [
+      { role: 'undo' },
+      { role: 'redo' },
+      { type: 'separator' },
+      { role: 'cut' },
+      { role: 'copy' },
+      { role: 'paste' },
+      { role: 'selectAll' }
+    ];
+  } else if (type === 'view') {
+    template = [
+      { role: 'reload' },
+      { role: 'forceReload' },
+      { role: 'toggleDevTools' },
+      { type: 'separator' },
+      { role: 'resetZoom' },
+      { role: 'zoomIn' },
+      { role: 'zoomOut' },
+      { type: 'separator' },
+      { role: 'togglefullscreen' }
+    ];
+  }
+
+  const menu = Menu.buildFromTemplate(template);
+  menu.popup({ window: win, x: Math.round(x), y: Math.round(y) });
+});
+
 ipcMain.handle('open-path', async (event, filePath) => {
   return await shell.openPath(filePath);
 });

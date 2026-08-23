@@ -292,45 +292,49 @@ export default function Viewer({ openTabs, activeTabId, onSelectTab, onCloseTab,
           <p>Select a file from the explorer to open a new tab.</p>
         </div>
       ) : (
-        <div className="viewer-content-wrapper">
-          <div className="viewer-header">
-            <div className="header-left">
-              <div className="header-icon">
-                {selectedItem.type === 'folder' ? <FolderIcon /> : <FileIcon name={selectedItem.name} url={url} />}
+        <div className="viewer-content-wrapper" style={{ padding: isWebLink ? 0 : 24 }}>
+          {!isWebLink && (
+            <div className="viewer-header">
+              <div className="header-left">
+                <div className="header-icon">
+                  {selectedItem.type === 'folder' ? <FolderIcon /> : <FileIcon name={selectedItem.name} url={url} />}
+                </div>
+                <div className="header-info">
+                  <h2>{selectedItem.name}</h2>
+                  <span className="type-badge">
+                    {selectedItem.type === 'folder' ? (selectedItem.isProject ? 'Project Folder' : 'Folder') : (isBoardFile ? 'Kanban Board' : 'Document')}
+                  </span>
+                </div>
               </div>
-              <div className="header-info">
-                <h2>{selectedItem.name}</h2>
-                <span className="type-badge">
-                  {selectedItem.type === 'folder' ? (selectedItem.isProject ? 'Project Folder' : 'Folder') : (isWebLink ? 'Web Link' : (isBoardFile ? 'Kanban Board' : 'Document'))}
-                </span>
-              </div>
-            </div>
 
-            <div className="header-actions">
-              <button 
-                className="icon-action-btn" 
-                title={`Path: ${selectedItem.path}\nType: ${selectedItem.type}`}
-              >
-                <Info size={20} />
-              </button>
-              <button 
-                className="icon-action-btn" 
-                title={'Open in External Application'} 
-                onClick={handleOpenSystem}
-              >
-                <ExternalLink size={20} />
-              </button>
+              <div className="header-actions">
+                <button 
+                  className="icon-action-btn" 
+                  title={`Path: ${selectedItem.path}\nType: ${selectedItem.type}`}
+                >
+                  <Info size={20} />
+                </button>
+                <button 
+                  className="icon-action-btn" 
+                  title={'Open in External Application'} 
+                  onClick={handleOpenSystem}
+                >
+                  <ExternalLink size={20} />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="viewer-content">
             {isWebLink && url ? (
-              <div className="editor-card animate-fade-in">
+              <div className="editor-card animate-fade-in" style={{ borderRadius: 0, border: 'none' }}>
                 <div className="browser-header">
                   <button className="browser-btn" onClick={() => handleBrowserAction('back')}><ArrowLeft size={16} /></button>
                   <button className="browser-btn" onClick={() => handleBrowserAction('forward')}><ArrowRight size={16} /></button>
-                  <button className="browser-btn" onClick={() => handleBrowserAction('refresh')}><RefreshCw size={16} /></button>
+                  <button className="browser-btn" onClick={() => handleBrowserAction('refresh')} title="Refresh"><RefreshCw size={16} /></button>
                   <div className="browser-url">{url}</div>
+                  <button className="browser-btn" title={`Path: ${selectedItem.path}\nType: ${selectedItem.type}`}><Info size={16} /></button>
+                  <button className="browser-btn" title={'Open in External Browser'} onClick={handleOpenSystem}><ExternalLink size={16} /></button>
                 </div>
                 <webview 
                   ref={webviewRef}
