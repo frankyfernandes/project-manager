@@ -7,6 +7,7 @@ import CommandPalette from './components/CommandPalette';
 import Dashboard from './components/Dashboard';
 import Timer from './components/Timer';
 import Login from './components/Login';
+import FloatingNote from './components/FloatingNote';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -173,6 +174,7 @@ function App() {
         onSelect={handleSelectItem} 
       />
       {enableTimeTracker && <Timer selectedItem={activeTab} />}
+      <FloatingNote activeTab={activeTab} />
     </div>
   );
 }

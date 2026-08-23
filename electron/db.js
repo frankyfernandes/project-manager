@@ -79,8 +79,13 @@ function initializeDb() {
       }
     });
     db.all("PRAGMA table_info(files)", (err, rows) => {
-      if (!err && rows && !rows.some(r => r.name === 'path')) {
+      if (!err && rows) {
+        if (!rows.some(r => r.name === 'path')) {
           db.run("ALTER TABLE files ADD COLUMN path TEXT");
+        }
+        if (!rows.some(r => r.name === 'is_default')) {
+          db.run("ALTER TABLE files ADD COLUMN is_default BOOLEAN DEFAULT 0");
+        }
       }
     });
   });

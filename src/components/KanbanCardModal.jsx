@@ -114,6 +114,7 @@ export default function KanbanCardModal({ card, isOpen, onClose, onSave }) {
                 <option value="task">Task</option>
                 <option value="bug">Bug</option>
                 <option value="issue">Issue</option>
+                <option value="note">Note</option>
               </select>
             </div>
             

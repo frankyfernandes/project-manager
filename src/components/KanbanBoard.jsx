@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, GripVertical, CheckCircle2, Bug, AlertCircle } from 'lucide-react';
+import { Plus, X, GripVertical, CheckCircle2, Bug, AlertCircle, FileText } from 'lucide-react';
 import KanbanCardModal from './KanbanCardModal';
 import './KanbanBoard.css';
 
@@ -204,6 +204,7 @@ export default function KanbanBoard({ initialData, onSave }) {
                   <div className="kanban-card-badges">
                     {card.type === 'bug' && <span className="kanban-badge bug"><Bug size={10} /> Bug</span>}
                     {card.type === 'issue' && <span className="kanban-badge issue"><AlertCircle size={10} /> Issue</span>}
+                    {card.type === 'note' && <span className="kanban-badge note"><FileText size={10} /> Note</span>}
                     {(!card.type || card.type === 'task') && <span className="kanban-badge task"><CheckCircle2 size={10} /> Task</span>}
                   </div>
                   <div className="kanban-card-title">{card.title}</div>

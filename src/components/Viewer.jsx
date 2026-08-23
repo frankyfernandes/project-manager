@@ -16,6 +16,23 @@ export default function Viewer({ openTabs, activeTabId, onSelectTab, onCloseTab,
   const [isBoardFile, setIsBoardFile] = useState(false);
   const [base64Data, setBase64Data] = useState(null);
   
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  useEffect(() => {
+    const handleKanbanUpdate = (e) => {
+      // If the currently open file is a board file for the updated project, trigger refresh
+      if (selectedItem && selectedItem.name.endsWith('.board') && selectedItem.project_id === e.detail.projectId) {
+        setRefreshTrigger(prev => prev + 1);
+      } else if (selectedItem && selectedItem.name.endsWith('.board') && selectedItem.is_default) {
+        // If the backend auto-created the default board, it might not have project_id directly on selectedItem if it's new.
+        // It's safest to just refresh if it's a board file.
+        setRefreshTrigger(prev => prev + 1);
+      }
+    };
+    window.addEventListener('kanban-updated', handleKanbanUpdate);
+    return () => window.removeEventListener('kanban-updated', handleKanbanUpdate);
+  }, [selectedItem]);
+  
   const [showSearch, setShowSearch] = useState(false);
   const [searchMode, setSearchMode] = useState('find');
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,7 +105,7 @@ export default function Viewer({ openTabs, activeTabId, onSelectTab, onCloseTab,
       setContent('');
       setBase64Data(null);
     }
-  }, [selectedItem]);
+  }, [selectedItem, refreshTrigger]);
 
   const handleOpenSystem = () => {
     if (window.electronAPI) {

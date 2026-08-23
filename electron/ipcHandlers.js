@@ -99,6 +99,19 @@ export function registerIpcHandlers() {
     }
 
     await runQuery(`INSERT INTO projects (id, name, path) VALUES (?, ?, ?)`, [id, name, projectPath]);
+    
+    // Auto-create default Kanban board
+    const boardName = `${name.toUpperCase().replace(/\s+/g, '_')}_NOTES.board`;
+    const boardId = crypto.randomUUID();
+    const boardPath = path.join(projectPath, boardName);
+    
+    if (!fs.existsSync(boardPath)) {
+      fs.writeFileSync(boardPath, '');
+    }
+    
+    await runQuery(`INSERT INTO files (id, project_id, folder_id, name, type, path, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+      [boardId, id, null, boardName, 'file', boardPath, 1]);
+
     return { id, name, path: projectPath, type: 'folder', isProject: true, children: [] };
   });
 
@@ -193,6 +206,9 @@ export function registerIpcHandlers() {
 
       // 2. Delete from DB
       if (item.type === 'file') {
+        if (item.is_default) {
+          throw new Error('Cannot delete a default project file.');
+        }
         await runQuery('DELETE FROM files WHERE id = ?', [item.id]);
       } else if (item.type === 'folder' && item.isProject) {
         await runQuery('DELETE FROM files WHERE project_id = ?', [item.id]);
@@ -258,6 +274,78 @@ export function registerIpcHandlers() {
       return rows[0]?.total || 0;
     } catch (e) {
       console.error(e);
+      throw e;
+    }
+  });
+
+  ipcMain.handle('add-instant-note', async (event, { projectId, noteText }) => {
+    try {
+      let files = await getQuery('SELECT * FROM files WHERE project_id = ? AND is_default = 1', [projectId]);
+      let boardFile;
+      
+      if (files.length === 0) {
+        const projects = await getQuery('SELECT * FROM projects WHERE id = ?', [projectId]);
+        if (projects.length === 0) throw new Error("Project not found.");
+        
+        const project = projects[0];
+        const boardName = `${project.name.toUpperCase().replace(/\s+/g, '_')}_NOTES.board`;
+        const boardId = crypto.randomUUID();
+        const boardPath = path.join(project.path, boardName);
+        
+        if (!fs.existsSync(boardPath)) {
+          fs.writeFileSync(boardPath, '');
+        }
+        
+        await runQuery(`INSERT INTO files (id, project_id, folder_id, name, type, path, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+          [boardId, projectId, null, boardName, 'file', boardPath, 1]);
+          
+        boardFile = { path: boardPath };
+        
+        // Let the frontend know a file was added so Explorer can refresh? 
+        // We can just rely on the user seeing it later, or they can refresh.
+      } else {
+        boardFile = files[0];
+      }
+      
+      const content = fs.existsSync(boardFile.path) ? fs.readFileSync(boardFile.path, 'utf-8') : '';
+      
+      let boardData;
+      try {
+        boardData = JSON.parse(content);
+        if (!boardData.columns || !Array.isArray(boardData.columns)) {
+          throw new Error("Invalid structure");
+        }
+      } catch (e) {
+        boardData = {
+          columns: [
+            { id: 'todo', title: 'To-Do', cards: [] },
+            { id: 'in-progress', title: 'In Progress', cards: [] },
+            { id: 'done', title: 'Done', cards: [] }
+          ]
+        };
+      }
+      
+      const newCard = {
+        id: crypto.randomUUID(),
+        title: noteText,
+        type: 'note',
+        content: '',
+        createdAt: new Date().toISOString(),
+        history: [{ timestamp: new Date().toISOString(), action: 'created' }]
+      };
+      
+      let todoCol = boardData.columns.find(c => c.id === 'todo' || c.title.toLowerCase() === 'to-do' || c.title.toLowerCase() === 'todo');
+      if (!todoCol) {
+        todoCol = { id: 'todo', title: 'To-Do', cards: [] };
+        boardData.columns.unshift(todoCol);
+      }
+      
+      todoCol.cards.push(newCard);
+      
+      fs.writeFileSync(boardFile.path, JSON.stringify(boardData, null, 2), 'utf-8');
+      return true;
+    } catch (e) {
+      console.error("Error adding instant note:", e);
       throw e;
     }
   });

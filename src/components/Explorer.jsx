@@ -219,7 +219,9 @@ const TreeItem = ({ item, level, onSelect, selectedItem, onAddFolder, onAddFile,
               <button onClick={handleUpload} title="Upload Files"><Upload size={14} /></button>
             </>
           )}
-          <button onClick={handleDelete} title="Delete" className="delete-btn"><Trash2 size={14} /></button>
+          {!item.is_default && (
+            <button onClick={handleDelete} title="Delete" className="delete-btn"><Trash2 size={14} /></button>
+          )}
         </div>
       </div>
       
