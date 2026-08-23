@@ -292,39 +292,7 @@ export default function Viewer({ openTabs, activeTabId, onSelectTab, onCloseTab,
           <p>Select a file from the explorer to open a new tab.</p>
         </div>
       ) : (
-        <div className="viewer-content-wrapper" style={{ padding: isWebLink ? 0 : 24 }}>
-          {!isWebLink && (
-            <div className="viewer-header">
-              <div className="header-left">
-                <div className="header-icon">
-                  {selectedItem.type === 'folder' ? <FolderIcon /> : <FileIcon name={selectedItem.name} url={url} />}
-                </div>
-                <div className="header-info">
-                  <h2>{selectedItem.name}</h2>
-                  <span className="type-badge">
-                    {selectedItem.type === 'folder' ? (selectedItem.isProject ? 'Project Folder' : 'Folder') : (isBoardFile ? 'Kanban Board' : 'Document')}
-                  </span>
-                </div>
-              </div>
-
-              <div className="header-actions">
-                <button 
-                  className="icon-action-btn" 
-                  title={`Path: ${selectedItem.path}\nType: ${selectedItem.type}`}
-                >
-                  <Info size={20} />
-                </button>
-                <button 
-                  className="icon-action-btn" 
-                  title={'Open in External Application'} 
-                  onClick={handleOpenSystem}
-                >
-                  <ExternalLink size={20} />
-                </button>
-              </div>
-            </div>
-          )}
-
+        <div className="viewer-content-wrapper" style={{ padding: 0 }}>
           <div className="viewer-content">
             {isWebLink && url ? (
               <div className="editor-card animate-fade-in" style={{ borderRadius: 0, border: 'none' }}>
@@ -345,20 +313,34 @@ export default function Viewer({ openTabs, activeTabId, onSelectTab, onCloseTab,
                 ></webview>
               </div>
             ) : isImageFile && base64Data ? (
-              <div className="editor-card animate-fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-tertiary)', border: 'none', padding: '24px' }}>
-                <img src={base64Data} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }} alt={selectedItem.name} />
+              <div className="editor-card animate-fade-in" style={{ borderRadius: 0, border: 'none', background: 'var(--bg-tertiary)' }}>
+                <div className="browser-header" style={{ justifyContent: 'flex-end' }}>
+                  <button className="browser-btn" title={`Path: ${selectedItem.path}\nType: ${selectedItem.type}`}><Info size={16} /></button>
+                  <button className="browser-btn" title={'Open in External Browser'} onClick={handleOpenSystem}><ExternalLink size={16} /></button>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '24px' }}>
+                  <img src={base64Data} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }} alt={selectedItem.name} />
+                </div>
               </div>
             ) : isPdfFile && base64Data ? (
-              <div className="editor-card animate-fade-in" style={{ border: 'none', background: 'transparent', display: 'flex', flex: 1 }}>
-                <iframe src={base64Data} style={{ flex: 1, width: '100%', height: '100%', border: 'none', borderRadius: '12px', backgroundColor: 'white' }}></iframe>
+              <div className="editor-card animate-fade-in" style={{ borderRadius: 0, border: 'none', background: 'transparent' }}>
+                <div className="browser-header" style={{ justifyContent: 'flex-end', background: 'var(--bg-secondary)' }}>
+                  <button className="browser-btn" title={`Path: ${selectedItem.path}\nType: ${selectedItem.type}`}><Info size={16} /></button>
+                  <button className="browser-btn" title={'Open in External Browser'} onClick={handleOpenSystem}><ExternalLink size={16} /></button>
+                </div>
+                <iframe src={base64Data} style={{ flex: 1, width: '100%', height: '100%', border: 'none', backgroundColor: 'white' }}></iframe>
               </div>
             ) : isTextFile ? (
-              <div className="editor-card animate-fade-in" style={{ position: 'relative' }}>
+              <div className="editor-card animate-fade-in" style={{ borderRadius: 0, border: 'none', position: 'relative' }}>
                 <div className="editor-header">
                   <h3>{isCodeFile ? 'Code Editor' : 'Rich Text Editor'}</h3>
-                  <button className="primary-btn sm-btn" onClick={handleSave}>
-                    <Save size={16} /> Save Changes
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button className="browser-btn" title={`Path: ${selectedItem.path}\nType: ${selectedItem.type}`}><Info size={16} /></button>
+                    <button className="browser-btn" title={'Open in External Application'} onClick={handleOpenSystem}><ExternalLink size={16} /></button>
+                    <button className="primary-btn sm-btn" style={{ marginLeft: '8px' }} onClick={handleSave}>
+                      <Save size={16} style={{ marginRight: '6px' }} /> Save Changes
+                    </button>
+                  </div>
                 </div>
                 
                 {showSearch && (
@@ -428,7 +410,14 @@ export default function Viewer({ openTabs, activeTabId, onSelectTab, onCloseTab,
                 )}
               </div>
             ) : isBoardFile ? (
-              <div className="editor-card animate-fade-in" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="editor-card animate-fade-in" style={{ borderRadius: 0, border: 'none', padding: 0, overflow: 'hidden' }}>
+                <div className="browser-header" style={{ justifyContent: 'space-between' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', marginLeft: '8px' }}>Kanban Board</div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="browser-btn" title={`Path: ${selectedItem.path}\nType: ${selectedItem.type}`}><Info size={16} /></button>
+                    <button className="browser-btn" title={'Open in External Browser'} onClick={handleOpenSystem}><ExternalLink size={16} /></button>
+                  </div>
+                </div>
                 <KanbanBoard 
                   initialData={content} 
                   onSave={(newData) => {
