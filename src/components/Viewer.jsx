@@ -138,6 +138,22 @@ export default function Viewer({ openTabs, activeTabId, onSelectTab, onCloseTab,
     if (action === 'refresh') webviewRef.current.reload();
   };
 
+  const handleUpdateLink = async () => {
+    if (!webviewRef.current || !selectedItem) return;
+    try {
+      const currentUrl = webviewRef.current.getURL();
+      if (window.electronAPI) {
+        await window.electronAPI.writeFile({ filePath: selectedItem.path, content: currentUrl });
+        setUrl(currentUrl);
+        // Dispatch global refresh so Explorer tree can update the favicon if the domain changed
+        window.dispatchEvent(new CustomEvent('force-refresh'));
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Failed to update link.');
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') {
@@ -326,7 +342,8 @@ export default function Viewer({ openTabs, activeTabId, onSelectTab, onCloseTab,
                   <button className="browser-btn" onClick={() => handleBrowserAction('back')}><ArrowLeft size={16} /></button>
                   <button className="browser-btn" onClick={() => handleBrowserAction('forward')}><ArrowRight size={16} /></button>
                   <button className="browser-btn" onClick={() => handleBrowserAction('refresh')} title="Refresh"><RefreshCw size={16} /></button>
-                  <div className="browser-url">{url}</div>
+                  <div className="browser-url" title={url}>{url}</div>
+                  <button className="browser-btn" title="Save Current Page as Link" onClick={handleUpdateLink}><Save size={16} /></button>
                   <button className="browser-btn" title={`Path: ${selectedItem.path}\nType: ${selectedItem.type}`}><Info size={16} /></button>
                   <button className="browser-btn" title={'Open in External Browser'} onClick={handleOpenSystem}><ExternalLink size={16} /></button>
                 </div>
